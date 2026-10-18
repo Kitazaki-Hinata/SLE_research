@@ -1,27 +1,136 @@
-# Data Cleaning
+<h3 align="center">
+Sierra Leone Exchange Rate Research
 
-Raw files are stored in `data/source/`, and cleaned CSV files are stored in `data/cleaned/`. The table below describes the transformations reflected in the current outputs.
+塞拉利昂汇率研究
+</h3>
 
-| Source file | Cleaned file | Cleaning steps and value meaning |
-| --- | --- | --- |
-| `DXY1DTVC.csv` | `DXY1DTVC.csv` | Convert Unix timestamps to UTC dates, keep the original `close`, and remove other price and volume columns. Add missing calendar dates and forward-fill the last available close. Values are DXY closing levels. |
-| `USDSLL1DICE.csv` | `USDSLL1DICE.csv` | Apply the same timestamp conversion, column selection, and daily forward-fill. Keep USD/SLL closing values at their original scale. |
-| `USDSLE1DICE.csv` | `USDSLE1DICE.csv` | Apply the same timestamp conversion, column selection, and daily forward-fill. Keep USD/SLE closing values at their original scale. |
-| `WORLDGDP.csv` | `SLEGDP.csv` | Skip the metadata preamble, select Sierra Leone (`SLE`), and reshape year columns into rows. Values are annual GDP growth (%); the initial missing value remains blank. |
-| `SLEunemployment.xls` | `SLEunemployment.csv` | Read the `Data` sheet, remove metadata, and reshape year columns into rows. Values are unemployment as a percentage of the total labor force (modeled ILO estimate). Initial missing values remain blank. |
-| `SLEBalanceofTrade.xls` | `SLEBalanceofTrade.csv` | Read the `Data` sheet, remove metadata, and reshape year columns into rows. Values are net trade in goods in current US dollars; negative values indicate a deficit. Forward-fill the missing 2025 value from 2024, leaving initial missing values blank. |
-| `WORLDInfla.xlsx` (`hcpi_m` sheet) | `SLE_hcpi_m.csv` | Select Sierra Leone, remove metadata, and reshape monthly columns into rows. Values are headline consumer price index levels, preserved without conversion to inflation rates. |
-| `WORLDInfla.xlsx` (`fcpi_m` sheet) | `SLE_fcpi_m.csv` | Select Sierra Leone, remove metadata, and reshape monthly columns into rows. Values are food and non-alcoholic beverage price index levels, preserved without conversion to inflation rates. |
+>  作者 / Author：Yi Yang
 
-Each cleaned CSV has a header and two columns: `date,close` for the three daily market series, or `date,value` for the annual and monthly economic series. Rows are in ascending date order. Blank numeric fields mean missing data, not zero; both CPI files retain their initial missing observations.
 
-Read `date` as an eight-digit `YYYYMMDD` string. Daily dates refer to the corresponding calendar day, including added dates carrying the previous close. Annual observations are labeled **January 1 of the following year** (the 2025 GDP value appears at `20260101`). Monthly observations are labeled **the first day of the following month** (January 2007 CPI appears at `20070201`). These labels describe period alignment rather than verified publication dates.
 
-For example, load a cleaned file with pandas and parse its date column explicitly:
+### 一、项目介绍
 
-```python
-import pandas as pd
+本项目研究塞拉利昂利昂汇率变动与国内货币、财政状况、外汇供求及国际商品市场之间的关系，进而预测后续USDSLE走势。研究以宏观因子回归为起点，逐步加入政策事件、伪样本外预测和情景模拟，评估不同经济条件下的汇率变化及其不确定性。
 
-df = pd.read_csv("data/cleaned/SLEGDP.csv", dtype={"date": "string"})
-df["date"] = pd.to_datetime(df["date"], format="%Y%m%d")
+研究背景包括政府融资与货币扩张、食品和燃料进口带来的外汇需求，以及铁矿石等矿产出口带来的外汇收入。IMF的研究指出，财政融资和货币扩张与2022到2023年的通胀上升密切相关，同时讨论了食品进口对外部收支的压力及矿业冲击对出口的影响。这些材料用于提出研究问题，不替代本项目自身的实证检验。参见[IMF《Sierra Leone: Selected Issues》](https://www.imf.org/-/media/files/publications/cr/2024/english/1sleea2024002-print-pdf.pdf)，正文p4、p36、p50-p56页。
+
+**项目重点考察以下问题：**
+
+1. 货币增长、政府债务和储备变化如何与利昂升贬值相关？
+2. 燃油、食品进口及铁矿石出口的金额或价格变化，能否解释额外的汇率波动？
+3. 政策调整、国际融资和其他宏观事件发生前后，模型关系是否稳定？
+4. 模型能否在未参与估计的时期提供有效预测，并反映不同情景下的风险范围？
+
+
+### 二、初始测试模型与测试方法
+
+#### 2.1 初始模型
+
+- 数据日期从2012年1月1日到2026年6月30日。模型将使用Pseudo Out-of-sample方法，设置2012-01-01到2024-12-31的数据用于模型拟合和测试，2025-01-01到2026-06-30用于测试模型预测准确性。最后，模型将预测2026-06-30到2027-12-31的外汇数据。
+
+- 回归统一使用 `data/final_monthly/` 的月度数据，当前汇率变化率和事件虚拟变量均包含174期（2012年1月至2026年6月），日期采用月末标签，从2012-01-31到2026-06-30。`data/final_daily/` 保留5295期日度数据（2012-01-01至2026-06-30），用于事件与日期核对。宏观因子的月度转换和对齐仍待完成，最终有效样本取决于所选变量的覆盖情况与滞后设定。
+
+- 用 E(t) 表示本期每美元兑换的利昂数量，E(t−1) 表示上一期的汇率。统一新旧货币单位后，汇率变动率计算为：
+
+```text
+Y(t) = 100 × [ln E(t) − ln E(t−1)]
 ```
+
+- 其中，t 表示本期，t−1 表示上一期；ln 表示自然对数。Y(t) 是汇率的对数变化率，可近似理解为百分比变化。**Y(t) > 0 表示每美元可兑换更多利昂，即利昂相对美元贬值；Y(t) < 0 表示利昂升值。**
+
+
+**以下为候选因子框架，月度基准模型按可用数据选择其中的因素：**
+
+```text
+Y(t) = α + βY× Y(t-1)+ βM × M(t) + βR × R(t) + βO × O(t) + βF × F(t)
+         + βD × D(t) + βC × C(t) + βI × I(t)
+         + γ1 × P1(t) + … + γK × PK(t) + ε(t)
+```
+
+- 其中，α 是常数项；βM、βR 等是对应经济变量的回归系数，表示其他变量不变时，该变量增加一个单位与 Y(t) 变化的关系。P1(t) 至 PK(t) 是 K 个政策事件变量，γ1 至 γK 是各自的回归系数；ε(t) 是模型未解释的扰动。各经济变量的含义如下：
+
+- 政策候选事件记录在[政策事件表](data/source/Sierra_Leone_Policy_Events_2000_2026.csv)。使用时区分公告日期、生效日期、日期精度和实施状态。
+
+| 符号            | 含义及待确定口径                                                                      |
+|---------------|-------------------------------------------------------------------------------|
+| Y(t-1)        | 上一个周期的USDSLE变化值                                                               |
+| M(t)          | 基础货币对数增长率，数据截止到2026-04。对数变化率：100 × [ln B(t) − ln B(t−1)]；**不是M2增长率**          |
+| R(t)          | 外汇储备指标:  对数变化率。数据截止到2025-04                                                   |
+| O(t)          | 燃油进口额变化: 对数变化率                                                                |
+| F(t)          | 食品进口额变化: 对数变化率                                                                |
+| D(t)          | 政府债务/GDP, Percentage form                                                     |
+| C(t)          | 经常账户/GDP变化: (Ct - C(t-1))/C(t-1) * 100%                                       |
+| I(t)          | 铁矿石出口额变化：对数变化率。**部分数据未披露，源数据使用前向填充，变化值为0**。包含NO_FILL数据，去除前向插值但是缺失数据的部分不能进行回归。 |
+| P1(t) 至 PK(t) | 按政策日期和作用机制构造的事件虚拟变量。                                                          |
+
+政府债务/GDP和经常账户/GDP目前为年度序列，保留用于背景分析和候选扩展。在确定适当的频率处理与信息可得性之前，不通过逐月复制年度值将其直接纳入月度基准模型。现有月度事件表采用“当月发生过该事件为1，否则为0”的编码；后续是否采用持续状态或窗口，需按研究设定另行确定。
+
+
+#### 2.2 检验因子流程
+
+1. **核对输入：** 从 `data/final_monthly/` 读取回归输入，确认真实统计期、单位、预测标记和保留的填充记录。当前已提供汇率变化率与事件虚拟变量，宏观因子需完成转换并按同一月度日期排序后再加入。
+2. **描述统计与平稳性：** 查看趋势、分布、异常时期和季节性，结合ADF及经济含义确定模型变量。
+3. **共线性检查：** 对实际进入模型的变量和滞后项计算相关矩阵与VIF。
+4. **基准估计：** 使用OLS估计简约模型，再按变量组扩展；报告系数、置信区间、样本区间和有效样本数。
+5. **残差与稳定性：** 检查自相关、异方差、异常点影响和系数稳定性。
+6. **稳健性与预测：** 比较合理的变量口径、滞后和样本设定；在共同样本上比较模型，避免把样本变化误认为模型改善。
+
+#### 2.3 伪样本外检验
+
+
+#### 2.4 情景与蒙特卡洛模拟
+
+### 三、Python使用方法与项目架构
+
+#### 3.1 数据分层与数据解读
+
+- `data/source/`：保存原始下载文件、来源工作簿和政策事件资料，用于溯源。
+- `data/cleaned/`：保存中间整理序列，用于追踪清洗过程；保留的年度序列用于背景分析和候选扩展。
+- `data/final_daily/`：保留日度汇率变化率和事件虚拟变量，用于事件与日期核对。
+- `data/final_monthly/`：后续回归的统一输入目录，当前包含月度汇率变化率和事件虚拟变量；宏观因子仍需准备。各月度文件按 `USDSLE_monthly.csv` 的日期与排序对齐。
+- [data/metadata.xlsx](data/metadata.xlsx)：统一记录变量名称、覆盖日期、频率、预测状态、变化形式、前向填充和来源。README不再重复列出数据来源表。
+
+其中：
+
+1. 元数据中的覆盖日期描述统计期间。现有中间CSV的月度标签通常是次月1日、年度标签是次年1月1日；这些不等于发布日期。最终文件按其实际日期约定读取，不应再次机械平移。
+2. 空值不等于零；前向填充不等于新增真实观测；预测值与历史观测应分别识别。
+3. CPI和商品指数的水平值不等于通胀率或价格变化率。现有基础货币文件保存余额，模型中的对数增长率需由相邻月度余额计算；已转换为变化率的最终汇率数据不再重复取增长率。
+4. 新旧利昂计价、美元金额的千/百万/十亿单位，以及铁矿石干吨/湿吨口径需要明确区分。相同经济变量的不同单位版本不应同时作为独立解释变量。
+5. 数据完成清洗不代表所有序列必须进入同一个模型。最终样本应由选定变量共同决定，并保留计算增长率及滞后所需的前期数据。
+
+#### 3.2 目录结构
+
+以下列出实际数据目录及后续代码布局；标注“规划”的目录和模块尚未创建。
+
+```text
+SLE_research/
+├── README.md
+├── LICENSE
+├── data/
+│   ├── metadata.xlsx
+│   ├── source/
+│   ├── cleaned/
+│   ├── final_daily/          # 日度汇率与事件数据，供事件和日期核对
+│   └── final_monthly/        # 月度回归输入；现有汇率变化率与事件虚拟变量
+├── configs/                 # 规划：变量、滞后、样本及模拟参数
+├── src/                     # 规划
+│   └── sle_research/
+│       ├── data_io.py       # 读取最终数据和元数据
+│       ├── features.py      # 构造尚未提供的模型特征和滞后
+│       ├── models.py        # 回归估计
+│       ├── diagnostics.py   # 统计诊断
+│       ├── backtest.py      # 伪样本外检验
+│       └── simulation.py    # 情景和蒙特卡洛模拟
+├── outputs/                 # 规划：回归表、诊断、预测及图形
+└── tests/                   # 规划：日期、单位和信息泄漏检查
+```
+
+输出文件应保存于 `outputs/`，不覆盖最终输入数据。每次运行记录变量、样本、滞后、标准误类型、随机种子和数据版本，以便复现。
+
+#### 3.3 Python环境与读取示例
+
+```powershell
+python -m venv .venv
+```
+回归统一使用 `final_monthly`；仅在核对日度数据时改读 `final_daily`。日期解析及后续模型特征应按最终文件的列名和元数据定义执行，`USDSLE_monthly.csv` 的 `USDSLE_monthly` 列已是乘以100的对数变化率。
+
