@@ -129,8 +129,10 @@ SLE_research/
 
 #### 3.3 Python环境与读取示例
 
+python版本：3.13，使用uv管理依赖。使用以下指令安装所有python依赖：
 ```powershell
-python -m venv .venv
+uv sync
+uv add --dev ipykernel
 ```
 回归统一使用 `final_monthly`；仅在核对日度数据时改读 `final_daily`。日期解析及后续模型特征应按最终文件的列名和元数据定义执行，`USDSLE_monthly.csv` 的 `USDSLE_monthly` 列已是乘以100的对数变化率。
 
