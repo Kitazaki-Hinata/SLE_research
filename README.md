@@ -1,10 +1,16 @@
-<h3 align="center">塞拉利昂汇率研究</h3>
+<h3 align="center">
+Sierra Leone Exchange Rate Research
 
-> 作者：Yi Yang
+塞拉利昂汇率研究
+</h3>
+
+> 作者 Author：Yi Yang (Kitazaki-Hinata)
 
 <p align="center">
-    简体中文 | <a href="doc/README_EN.md">English</a>
+    语言 Language ： 简体中文 | <a href="doc/README_EN.md">English</a>
 </p>
+
+---
 
 ### 一、项目介绍
 
