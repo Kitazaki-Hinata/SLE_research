@@ -14,9 +14,9 @@ Sierra Leone Exchange Rate Research
 
 ### 一、项目介绍
 
-本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。研究变量包括基础货币、外汇储备、燃料进口、食品进口、铁矿石出口、政府债务和经常账户。
+本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。初始模型使用基础货币、外汇储备、燃料进口、食品进口、铁矿石出口、政府债务和经常账户。第二轮模型使用 CPI、GDP 增长率变化、贸易差额变化、外汇储备和政府债务/GDP，并保留汇率滞后一期及事件项。
 
-目前已完成数据清洗与月度对齐、描述性统计、ADF/KPSS 平稳性检验，以及因子相关性和 VIF 检查。分析代码、图表和结果保存在三个 Jupyter 笔记本中。
+目前已完成两轮数据整理、因子检查和 AR(1) 回归，以及假设检验与残差诊断。分析代码、图表和结果保存在六个 Jupyter 笔记本中。
 
 ### 二、初始测试模型与测试方法
 
@@ -40,7 +40,7 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
          + γ1 × P1(t) + … + γK × PK(t) + ε(t)
 ```
 
-α 为截距，β 和 γ 为系数，ε(t) 为误差项。当前已完成该框架下的数据整理与因子诊断。
+α 为截距，β 和 γ 为系数，ε(t) 为误差项。该框架下的数据整理、因子诊断和初始回归已完成，回归见 [4_auto_regression_model.ipynb](notebook/4_auto_regression_model.ipynb)。
 
 | 符号 | 变量定义 |
 |---|---|
@@ -63,8 +63,9 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 | 描述性统计 | [1_descriptive.ipynb](notebook/1_descriptive.ipynb) | 样本与缺失检查、分布统计、滚动均值与标准差、趋势和季节性筛查 |
 | 平稳性检验 | [2_adf.ipynb](notebook/2_adf.ipynb) | ADF、KPSS 及滞后设定敏感性检查，显著性水平为 0.05；年度变量按年检验 |
 | 共线性检查 | [3_colinearity_check.ipynb](notebook/3_colinearity_check.ipynb) | 七个同期因子的 Pearson 相关矩阵、热力图、VIF 和矩阵秩；样本含 156 个月，使用原版铁矿石序列，排除 USDSLE 和政策 dummy |
+| 初始回归 | [4_auto_regression_model.ipynb](notebook/4_auto_regression_model.ipynb) | 汇率滞后一期、七个宏观因子及政策事件项的 OLS 回归，HAC 假设检验和残差诊断 |
 
-当前结果：
+初始因子检查结果：
 
 - 描述性筛查发现部分序列存在季节性和波动变化。
 - ADF/KPSS 结果支持月度序列和经常账户年度变化保留当前形式；政府债务年度变化的结论不明确。`NO_FILL` 铁矿石的平稳性检验使用最长连续区间，共 77 个月。
@@ -92,7 +93,15 @@ SLE_research/
 │   ├── source/              # 原始数据
 │   ├── cleaned/             # 整理后的中间数据
 │   ├── final_daily/         # 日度汇率与政策事件数据
-│   └── final_monthly/       # 月度分析数据
+│   ├── final_monthly/       # 初始模型的月度数据
+│   └── 2_regression_monthly/ # 第二轮回归的月度数据
+│       ├── USDSLE_monthly.csv
+│       ├── headline_cpi_log_change_monthly.csv
+│       ├── gdp_annual_pct_change_monthly.csv
+│       ├── trade_balance_annual_pct_change_monthly.csv
+│       ├── fx_reserves_log_change_monthly.csv
+│       ├── general_government_gross_debt_annual_change_pp_monthly.csv
+│       └── Sierra_Leone_Policy_Event_Dummies_monthly.csv
 ├── scripts/
 │   ├── prepare_trade_monthly.py
 │   ├── prepare_money_reserves_monthly.py
@@ -101,7 +110,10 @@ SLE_research/
 └── notebook/
     ├── 1_descriptive.ipynb
     ├── 2_adf.ipynb
-    └── 3_colinearity_check.ipynb
+    ├── 3_colinearity_check.ipynb
+    ├── 4_auto_regression_model.ipynb
+    ├── 5_second_data_check.ipynb
+    └── 6_second_regression.ipynb
 ```
 
 #### 3.2 运行方法
@@ -112,5 +124,85 @@ SLE_research/
 uv sync
 ```
 
-在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的三个笔记本。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
+在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的六个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
+
+#### 3.3 第二轮使用的数据
+
+第二轮输入位于 [data/2_regression_monthly/](data/2_regression_monthly/)，各文件均保留 2012 年 1 月至 2026 年 6 月的 174 个月末日期。数值序列读取日期和数值列，政府债务文件中的 `period_classification` 不进入回归。
+
+| 数据 | 回归输入文件 | 来源 |
+|---|---|---|
+| USDSLE | [USDSLE_monthly.csv](data/2_regression_monthly/USDSLE_monthly.csv) | 沿用 [初始月度汇率](data/final_monthly/USDSLE_monthly.csv)，原始新旧利昂汇率文件为 `USDSLE1DICE.csv`、`USDSLL1DICE.csv` |
+| CPI | [headline_cpi_log_change_monthly.csv](data/2_regression_monthly/headline_cpi_log_change_monthly.csv) | [WORLDInfla.xlsx](data/source/WORLDInfla.xlsx) 的 `hcpi_m`，World Bank Inflation Database，指数底层来源为 IFS |
+| GDP 增长率变化 | [gdp_annual_pct_change_monthly.csv](data/2_regression_monthly/gdp_annual_pct_change_monthly.csv) | [WORLDGDP.csv](data/source/WORLDGDP.csv)，World Bank WDI，`NY.GDP.MKTP.KD.ZG` |
+| 贸易差额变化 | [trade_balance_annual_pct_change_monthly.csv](data/2_regression_monthly/trade_balance_annual_pct_change_monthly.csv) | [SLEBalanceofTrade.xls](data/source/SLEBalanceofTrade.xls)，World Bank WDI，货物净贸易余额（当年美元），`BN.GSR.MRCH.CD` |
+| 外汇储备 | [fx_reserves_log_change_monthly.csv](data/2_regression_monthly/fx_reserves_log_change_monthly.csv) | [储备与基础货币原始工作簿](data/source/A-sierra_leone_reserves_base_money_monthly.xlsx)，IMF IFS |
+| 政府债务/GDP | [general_government_gross_debt_annual_change_pp_monthly.csv](data/2_regression_monthly/general_government_gross_debt_annual_change_pp_monthly.csv) | IMF WEO，`GGXWDG_NGDP`；中间数据位于 `data/cleaned/5. IMF_general_government_gross_debt_percent_gdp.csv` |
+| 事件 dummy | [Sierra_Leone_Policy_Event_Dummies_monthly.csv](data/2_regression_monthly/Sierra_Leone_Policy_Event_Dummies_monthly.csv) | 六个事件列，整理说明见 [5_second_data_check.ipynb](notebook/5_second_data_check.ipynb) |
+
+CPI 中间文件的日期标签比统计月份晚一个月，年度 GDP 和贸易差额的 `YYYY0101` 标签对应 `YYYY−1` 年；最终输入已按统计期对齐。GDP 和贸易差额使用 2011 年作为计算 2012 年变化的基期。三项年度因子将当年变化值重复填入各月，不除以 12。
+
+缺失值保留为空：CPI 首月为空，有效变化值截至 2025 年 3 月；GDP 截至 2025 年 12 月；贸易差额截至 2024 年 12 月，原先被填充的 2025 年值已恢复为空；外汇储备截至 2025 年 4 月。政府债务的 2026 年数据标为预测值。2025 年及以后的数据不参与当前训练期的拟合与诊断。
+
+### 四、最终回归模型与因子解释
+
+#### 4.1 最终模型
+
+最终模型见 [6_second_regression.ipynb](notebook/6_second_regression.ipynb)。模型在完整月历上生成汇率滞后一期，再取共同非缺失样本，实际回归覆盖 2012 年 2 月至 2024 年 12 月，共 155 个月。
+
+```text
+Y(t) = α + φ × Y(t−1) + βπ × Π(t) + βG × G(t) + βB × B(t)
+         + βR × R(t) + βD × D(t) + γ1 × P1(t) + … + γ5 × P5(t) + ε(t)
+```
+
+Y(t) 仍为 `100 × [ln E(t) − ln E(t−1)]`，正值表示利昂贬值。模型包含截距、一个 AR(1) 项、五个同期宏观因子和五个可识别事件项，共 12 个参数。
+
+#### 4.2 因子定义与系数
+
+下表系数取自 notebook 的当前输出。设 y 为统计年份，g(y) 为原始 GDP 年度增长率（%），TB(y) 为货物贸易差额，Q(y) 为政府债务/GDP 比例（%）。
+
+| 符号 | 变量定义 | 系数（约） |
+|---|---|---:|
+| α | 截距 | −0.0263524 |
+| Y(t−1) | 上一期汇率对数变化率 | −0.162354 |
+| Π(t) | CPI 月度对数变化：`100 × [ln CPI(t) − ln CPI(t−1)]` | 1.04130 |
+| G(t) | GDP 增长率自身的年度变化：`100 × [g(y) − g(y−1)] / abs(g(y−1))` | −0.00210419 |
+| B(t) | 贸易差额年度变化：`100 × [TB(y) − TB(y−1)] / abs(TB(y−1))` | 0.00115410 |
+| R(t) | 外汇储备月度对数变化：`100 × [ln Reserves(t) − ln Reserves(t−1)]` | −0.107443 |
+| D(t) | 政府债务/GDP 年度百分点变化：`Q(y) − Q(y−1)` | 0.0827914 |
+
+CPI 和外汇储备中的 `1.00` 表示 1%的对数变化；GDP 和贸易差额中的 `1.00` 表示 1%的基期绝对值变化率；政府债务中的 `1.00` 表示增加 1 个百分点。GDP 因子描述增长率自身的相对变化。样本内贸易差额为负，因此 B(t) 为正表示贸易余额改善、逆差收窄。
+
+年度变化按统计年份填入各月，训练期各有 13 个年度观测。系数描述控制其余解释变量后的条件关联，不能直接解释为因果效应。
+
+#### 4.3 事件项
+
+原始事件表包含六列。2021 年 8 月的两个事件列完全相同，合并后形成五个事件项；每项在对应月份为 1，其余月份为 0。
+
+| 模型项 | 月份 | 对应事件 | 系数（约） |
+|---|---|---|---:|
+| P1(t) / `P_2015_11` | 2015-11 | IMF ECF 审查与拨款 | −6.23018 |
+| P2(t) / `P_2016_06` | 2016-06 | 英国脱欧公投 | 32.4303 |
+| P3(t) / `P_2021_08` | 2021-08 | 货币改值公告与 SDR 分配 | 3.30607 |
+| P4(t) / `P_2023_06` | 2023-06 | IMF ECF 第六、七次审查 | −20.3907 |
+| P5(t) / `P_2023_11` | 2023-11 | IMF ECF 第八次审查 | −1.92627 |
+
+单月事件项会使对应月份残差为零，缺少重复事件信息，因此只报告系数，不报告单事件的 HAC 显著性；同月两个事件的影响也无法分别识别。
+
+#### 4.4 检验方法与当前结果
+
+| 阶段 | 笔记本 | 方法与设置 |
+|---|---|---|
+| 第二轮数据检查 | [5_second_data_check.ipynb](notebook/5_second_data_check.ipynb) | 五因子图表、12 个月滚动均值与标准差、基本统计；ADF/KPSS 使用常数项、`alpha=0.05`，年度因子按年检验 |
+| 相关性与共线性 | [6_second_regression.ipynb](notebook/6_second_regression.ipynb) | 五个宏观因子的 Pearson 相关矩阵和 VIF，VIF 提示阈值为 5 |
+| 回归与假设检验 | 同上 | OLS 系数，HAC(12) 标准误、Bartlett 权重及有限样本缩放；五因子单项 p 值作 Holm 校正，另作五因子联合 Wald 检验 |
+| 残差检查与图表 | 同上 | BG 1、6、12 阶检验及 Holm 校正；非事件月份的 Koenker BP 检验；残差与当期、滞后汇率变化率相关性；实际值与拟合值、逐期残差及残差分布图 |
+
+当前输出：
+
+- R² 为 0.532932，调整后 R² 为 0.497004，样本内 RMSE 为 3.2925。
+- CPI 的 Holm 校正 p 值为 0.003003，其余四个宏观因子的校正 p 值均大于 0.05；五因子联合 Wald 检验 p 值为 0.000178。
+- BG 三项校正 p 值均大于 0.05；非事件月份 BP 检验 p 值为 0.383898，未拒绝各自原假设。残差与当期汇率变化率的相关性由 OLS 恒等式决定，不单独作为模型有效性的证据。
+
+以上为样本内估计与诊断。同期宏观变量及年度数据的发布时间仍需在预测时考虑，现有结果尚未验证样本外预测能力。
 
