@@ -4,7 +4,9 @@ Sierra Leone Exchange Rate Research
 塞拉利昂汇率研究
 </h3>
 
-> 作者 Author：Yi Yang (Kitazaki-Hinata)
+> **作者 Author:** Yi Yang (Kitazaki-Hinata)
+> 
+> **最后更新 Last Update:** 2026-Oct-26
 
 <p align="center">
     语言 Language ： 简体中文 | <a href="doc/README_EN.md">English</a>
@@ -14,13 +16,13 @@ Sierra Leone Exchange Rate Research
 
 ### 一、项目介绍
 
-本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。初始模型使用基础货币、外汇储备、燃料进口、食品进口、铁矿石出口、政府债务和经常账户。第二轮模型使用 CPI、GDP 增长率变化、贸易差额变化、外汇储备和政府债务/GDP，并保留汇率滞后一期及事件项。
+本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。 已完成两轮数据整理、因子检查和 AR(1) 回归，以及假设检验与残差诊断。分析代码、图表和结果保存在六个 Jupyter 笔记本中（在```notebook```文件夹当中）。
 
-目前已完成两轮数据整理、因子检查和 AR(1) 回归，以及假设检验与残差诊断。分析代码、图表和结果保存在六个 Jupyter 笔记本中。
+---
 
-### 二、初始测试模型与测试方法
+### 二、测试模型与测试方法
 
-#### 2.1 初始模型
+#### 2.1 初始模型（第一阶段模型）
 
 月度数据位于 `data/final_monthly/`，覆盖 2012 年 1 月至 2026 年 6 月，共 174 个月末日期。当前诊断使用 2012 年 1 月至 2024 年 12 月的训练数据。
 
@@ -56,6 +58,8 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 
 对数变化率统一按 `100 × [ln X(t) − ln X(t−1)]` 计算。政策记录见[政策事件表](data/source/Sierra_Leone_Policy_Events_2000_2026.csv)，数据来源与变量信息见[元数据表](data/metadata.xlsx)。
 
+---
+
 #### 2.2 检验因子流程
 
 | 阶段 | 笔记本 | 已完成内容 |
@@ -65,68 +69,25 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 | 共线性检查 | [3_colinearity_check.ipynb](notebook/3_colinearity_check.ipynb) | 七个同期因子的 Pearson 相关矩阵、热力图、VIF 和矩阵秩；样本含 156 个月，使用原版铁矿石序列，排除 USDSLE 和政策 dummy |
 | 初始回归 | [4_auto_regression_model.ipynb](notebook/4_auto_regression_model.ipynb) | 汇率滞后一期、七个宏观因子及政策事件项的 OLS 回归，HAC 假设检验和残差诊断 |
 
-初始因子检查结果：
+---
 
-- 描述性筛查发现部分序列存在季节性和波动变化。
-- ADF/KPSS 结果支持月度序列和经常账户年度变化保留当前形式；政府债务年度变化的结论不明确。`NO_FILL` 铁矿石的平稳性检验使用最长连续区间，共 77 个月。
-- 七因子的最大绝对相关系数为 0.4759，出现在基础货币与外汇储备之间。VIF 为 1.0056–1.3070，含截距的矩阵秩为 8，当前样本未显示明显多重共线性。
+#### 2.3 初始回归结果
+经过数据清洗和截断，季节性检查，单位根检查和共线性检查之后，模型的β值的p-value结果如下：
+- 基础货币 Base money p ： 0.47501
+- 燃料进口 Fuel Imports p : 0.913434
+- 食品进口 Food Imports p : 0.626493
+- 铁矿石出口 Iron ore exports p：0.851677
+- 经常账户 Current Account p ：0.200116
+<p align="center">
+  <img src="doc/figure/fig1_first_regression.png" alt="First regression result">
+</p>
 
-两项年度因子在训练期各有 13 个年度观测，逐月重复后用于共线性诊断。原版铁矿石保留源数据的前向填充；`NO_FILL` 版本剔除两段长期填充及受其影响的变化率，训练期保留 124 个月。
+  具体数据参见[4_auto_regression_model.ipynb](notebook/4_auto_regression_model.ipynb) 。由于整体解释力度不足，因此第二次回归选择替换宏观因子和事件政策dummy因子并进行重新回归。
 
-### 三、Python 使用方法与项目架构
+---
 
-#### 3.1 目录结构
+#### 2.4 第二次回归
 
-主要文件结构：
-
-```text
-SLE_research/
-├── README.md
-├── LICENSE
-├── pyproject.toml
-├── uv.lock
-├── .python-version
-├── doc/
-│   └── README_EN.md
-├── data/
-│   ├── metadata.xlsx
-│   ├── source/              # 原始数据
-│   ├── cleaned/             # 整理后的中间数据
-│   ├── final_daily/         # 日度汇率与政策事件数据
-│   ├── final_monthly/       # 初始模型的月度数据
-│   └── 2_regression_monthly/ # 第二轮回归的月度数据
-│       ├── USDSLE_monthly.csv
-│       ├── headline_cpi_log_change_monthly.csv
-│       ├── gdp_annual_pct_change_monthly.csv
-│       ├── trade_balance_annual_pct_change_monthly.csv
-│       ├── fx_reserves_log_change_monthly.csv
-│       ├── general_government_gross_debt_annual_change_pp_monthly.csv
-│       └── Sierra_Leone_Policy_Event_Dummies_monthly.csv
-├── scripts/
-│   ├── prepare_trade_monthly.py
-│   ├── prepare_money_reserves_monthly.py
-│   ├── prepare_annual_changes_monthly.py
-│   └── prepare_iron_ore_no_long_fill.py
-└── notebook/
-    ├── 1_descriptive.ipynb
-    ├── 2_adf.ipynb
-    ├── 3_colinearity_check.ipynb
-    ├── 4_auto_regression_model.ipynb
-    ├── 5_second_data_check.ipynb
-    └── 6_second_regression.ipynb
-```
-
-#### 3.2 运行方法
-
-项目使用 Python 3.13 和 uv。在项目根目录安装依赖：
-
-```powershell
-uv sync
-```
-
-在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的六个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
-
-#### 3.3 第二轮使用的数据
 
 第二轮输入位于 [data/2_regression_monthly/](data/2_regression_monthly/)，各文件均保留 2012 年 1 月至 2026 年 6 月的 174 个月末日期。数值序列读取日期和数值列，政府债务文件中的 `period_classification` 不进入回归。
 
@@ -144,10 +105,9 @@ CPI 中间文件的日期标签比统计月份晚一个月，年度 GDP 和贸�
 
 缺失值保留为空：CPI 首月为空，有效变化值截至 2025 年 3 月；GDP 截至 2025 年 12 月；贸易差额截至 2024 年 12 月，原先被填充的 2025 年值已恢复为空；外汇储备截至 2025 年 4 月。政府债务的 2026 年数据标为预测值。2025 年及以后的数据不参与当前训练期的拟合与诊断。
 
-### 四、最终回归模型与因子解释
+---
 
-#### 4.1 最终模型
-
+#### 2.5 最终模型
 最终模型见 [6_second_regression.ipynb](notebook/6_second_regression.ipynb)。模型在完整月历上生成汇率滞后一期，再取共同非缺失样本，实际回归覆盖 2012 年 2 月至 2024 年 12 月，共 155 个月。
 
 ```text
@@ -157,7 +117,17 @@ Y(t) = α + φ × Y(t−1) + βπ × Π(t) + βG × G(t) + βB × B(t)
 
 Y(t) 仍为 `100 × [ln E(t) − ln E(t−1)]`，正值表示利昂贬值。模型包含截距、一个 AR(1) 项、五个同期宏观因子和五个可识别事件项，共 12 个参数。
 
-#### 4.2 因子定义与系数
+<br>
+
+> **模型回归结果：**
+- R² 为 0.532932，调整后 R² 为 0.497004，样本内 RMSE 为 3.2925。
+- CPI 的 Holm 校正 p 值为 0.003003，其余四个宏观因子的校正 p 值均大于 0.05；五因子联合 Wald 检验 p 值为 0.000178。
+- BG 三项校正 p 值均大于 0.05；非事件月份 BP 检验 p 值为 0.383898，未拒绝各自原假设。
+
+
+<br>
+
+> **宏观因子统计：**
 
 下表系数取自 notebook 的当前输出。设 y 为统计年份，g(y) 为原始 GDP 年度增长率（%），TB(y) 为货物贸易差额，Q(y) 为政府债务/GDP 比例（%）。
 
@@ -175,7 +145,9 @@ CPI 和外汇储备中的 `1.00` 表示 1%的对数变化；GDP 和贸易差额�
 
 年度变化按统计年份填入各月，训练期各有 13 个年度观测。系数描述控制其余解释变量后的条件关联，不能直接解释为因果效应。
 
-#### 4.3 事件项
+<br>
+
+> **事件dummy统计：**
 
 原始事件表包含六列。2021 年 8 月的两个事件列完全相同，合并后形成五个事件项；每项在对应月份为 1，其余月份为 0。
 
@@ -187,22 +159,73 @@ CPI 和外汇储备中的 `1.00` 表示 1%的对数变化；GDP 和贸易差额�
 | P4(t) / `P_2023_06` | 2023-06 | IMF ECF 第六、七次审查 | −20.3907 |
 | P5(t) / `P_2023_11` | 2023-11 | IMF ECF 第八次审查 | −1.92627 |
 
-单月事件项会使对应月份残差为零，缺少重复事件信息，因此只报告系数，不报告单事件的 HAC 显著性；同月两个事件的影响也无法分别识别。
+---
 
-#### 4.4 检验方法与当前结果
+### 三、Pseudo Out of Sample 模拟预测
+#### 3.1 POS模拟规则
 
-| 阶段 | 笔记本 | 方法与设置 |
-|---|---|---|
-| 第二轮数据检查 | [5_second_data_check.ipynb](notebook/5_second_data_check.ipynb) | 五因子图表、12 个月滚动均值与标准差、基本统计；ADF/KPSS 使用常数项、`alpha=0.05`，年度因子按年检验 |
-| 相关性与共线性 | [6_second_regression.ipynb](notebook/6_second_regression.ipynb) | 五个宏观因子的 Pearson 相关矩阵和 VIF，VIF 提示阈值为 5 |
-| 回归与假设检验 | 同上 | OLS 系数，HAC(12) 标准误、Bartlett 权重及有限样本缩放；五因子单项 p 值作 Holm 校正，另作五因子联合 Wald 检验 |
-| 残差检查与图表 | 同上 | BG 1、6、12 阶检验及 Holm 校正；非事件月份的 Koenker BP 检验；残差与当期、滞后汇率变化率相关性；实际值与拟合值、逐期残差及残差分布图 |
+#### 3.2 文件位置
 
-当前输出：
+---
 
-- R² 为 0.532932，调整后 R² 为 0.497004，样本内 RMSE 为 3.2925。
-- CPI 的 Holm 校正 p 值为 0.003003，其余四个宏观因子的校正 p 值均大于 0.05；五因子联合 Wald 检验 p 值为 0.000178。
-- BG 三项校正 p 值均大于 0.05；非事件月份 BP 检验 p 值为 0.383898，未拒绝各自原假设。残差与当期汇率变化率的相关性由 OLS 恒等式决定，不单独作为模型有效性的证据。
+### 四、未来一年外汇预测与可替代性
 
-以上为样本内估计与诊断。同期宏观变量及年度数据的发布时间仍需在预测时考虑，现有结果尚未验证样本外预测能力。
+#### 4.1 预测方式
+
+#### 4.2 预测结果
+
+---
+
+### 五、Python 使用方法与项目架构
+
+#### 5.1 目录结构
+
+主要文件结构：
+
+```text
+SLE_research/
+├── README.md
+├── LICENSE
+├── pyproject.toml
+├── uv.lock
+├── .python-version
+├── doc/
+│   ├── README_EN.md
+│   └── figure/
+│       └── fig1_first_regression.png # 初始回归结果图
+├── data/
+│   ├── metadata.xlsx
+│   ├── source/              # 原始数据
+│   ├── cleaned/             # 整理后的中间数据
+│   ├── final_daily/         # 日度汇率与政策事件数据
+│   ├── final_monthly/       # 初始模型的月度数据
+│   ├── 2_regression_monthly/ # 第二轮回归的月度数据
+│   └── 3_POS_prediction_daily/ # POS 模拟预测的日度数据
+│       └── USDSLE_daily.csv
+├── scripts/
+│   ├── prepare_trade_monthly.py
+│   ├── prepare_money_reserves_monthly.py
+│   ├── prepare_annual_changes_monthly.py
+│   └── prepare_iron_ore_no_long_fill.py
+└── notebook/
+    ├── 1_descriptive.ipynb
+    ├── 2_adf.ipynb
+    ├── 3_colinearity_check.ipynb
+    ├── 4_auto_regression_model.ipynb
+    ├── 5_second_data_check.ipynb
+    ├── 6_second_regression.ipynb
+    └── 7_POS_mock_prediction.ipynb
+```
+
+#### 5.2 运行方法
+
+对于部分用于处理数据的python脚本，项目使用 Python 3.13 和 uv。在项目根目录安装依赖然后单独运行每个脚本（注：本项目没有main.py）：
+
+```powershell
+# powershell
+uv sync
+```
+
+在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的六个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
+
 
