@@ -16,13 +16,29 @@ Sierra Leone Exchange Rate Research
 
 ### 一、项目介绍
 
-本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。 已完成两轮数据整理、因子检查和 AR(1) 回归，以及假设检验与残差诊断。分析代码、图表和结果保存在六个 Jupyter 笔记本中（在```notebook```文件夹当中）。
+本项目研究塞拉利昂利昂兑美元汇率（USDSLE）与货币、财政和外汇供求因素之间的关系。 已完成两轮数据整理、因子检查和 AR(1) 回归，以及假设检验与残差诊断。分析代码、图表和结果保存在七个 Jupyter 笔记本中（在```notebook```文件夹当中）。
 
 ---
 
 ### 二、测试模型与测试方法
 
-#### 2.1 初始模型（第一阶段回归）
+#### 2.1 ```data```文件夹的数据目录
+一共包含以下类别的数据：
+
+| 目录/名称 | 说明                                                                                                |
+|---|---------------------------------------------------------------------------------------------------|
+| `source` | 数据源下载的原始数据                                                                                        |
+| `cleaned` | 进行了初步数据清洗、时间戳整理的数据                                                                                |
+| `final_daily` | 以日为时间周期的数据；因为后续相关性研究使用月度周期，所以这里仅作为数据清洗后的备份                                                        |
+| `final_monthly` | **重要：** 第一次回归用到的、完整的、数据清洗过的、时间戳统一且进行过时间戳截断的数据                                                     |
+| `2_regression_monthly` |  **重要：** 第二次回归用到的最终数据                                                                                      |
+| `IMF_predict_data` | IMF 提供的塞拉利昂宏观经济预测数据的源数据                                                                           |
+| `POS_actual_predict_origin` | 包含所有实际数据和 IMF 预测数据，并进行了初步数据整理和发布日期错位/滞后处理                                                            |
+| `3_POS_prediction` |  **重要：** 用于 POS 模型验证阶段的最终数据；其中 GDP、trade balance 和政府债务/GDP 三个数据集合了 IMF 预测值和实际值，对应数据第三列标出，`0` 为实际值，`1` 为预测值 |
+
+---
+
+#### 2.2 初始模型（第一阶段回归）
 
 月度数据位于 `data/final_monthly/`，覆盖 2012 年 1 月至 2026 年 6 月，共 174 个月末日期。当前诊断使用 2012 年 1 月至 2024 年 12 月的训练数据。
 
@@ -60,7 +76,7 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 
 ---
 
-#### 2.2 检验因子流程
+#### 2.3 检验因子流程
 
 | 阶段 | 笔记本 | 已完成内容 |
 |---|---|---|
@@ -71,7 +87,7 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 
 ---
 
-#### 2.3 初始回归结果
+#### 2.4 初始回归结果
 经过数据清洗和截断，季节性检查，单位根检查和共线性检查之后，模型的β值的p-value结果如下：
 - 基础货币 Base money p ： 0.47501
 - 燃料进口 Fuel Imports p : 0.913434
@@ -86,7 +102,7 @@ Y(t) = α + βY × Y(t−1) + βM × M(t) + βR × R(t) + βO × O(t) + βF × F
 
 ---
 
-#### 2.4 二阶段模型（第二次回归）
+#### 2.5 二阶段模型（第二次回归）
 
 
 第二轮输入位于 [data/2_regression_monthly/](data/2_regression_monthly/)，各文件均保留 2012 年 1 月至 2026 年 6 月的 174 个月末日期。数值序列读取日期和数值列，政府债务文件中的 `period_classification` 不进入回归。
@@ -107,7 +123,7 @@ CPI 中间文件的日期标签比统计月份晚一个月，年度 GDP 和贸�
 
 ---
 
-#### 2.5 最终模型
+#### 2.6 最终模型
 最终模型见 [6_second_regression.ipynb](notebook/6_second_regression.ipynb)。模型在完整月历上生成汇率滞后一期，再取共同非缺失样本，实际回归覆盖 2012 年 2 月至 2024 年 12 月，共 155 个月。
 
 ```text
@@ -166,14 +182,20 @@ CPI 和外汇储备中的 `1.00` 表示 1%的对数变化；GDP 和贸易差额�
 取2025年1月1日到2026年6月30日的数据进行POS模拟回归，用于探究模型的预测属性。
 宏观数据方面，如果官方披露了对应的数据发布时间，则数据放在对应的数据发布时间。如果没有披露，则放到下个周期的月中或者年中（例如，如果对应6月的经济数据，则归类到7月15日；如果是2024年的经济数据，则归类到2025年6月18日）。
 
-此外，在官方披露数据之前，
+此外，回归将采用“滞后回归”和“预测值+实际值”两种处理方式。滞后回归是指数据按其实际发布日期进入模型，例如 2024 年数据只有在正式发布后才会更新，发布前只能使用当时可得的信息；预测值+实际值是指当同一指标同时存在 IMF 预测值和实际值时，构造“当日采用值”：实际值尚未发布时使用当时可得的最新预测值，实际值发布后改用实际值，并保留该值来源为预测值或实际值的标记。
 
-#### 3.2 文件位置
-```data/IMF_predict_data```存放了从IMF上下载的对于塞拉利昂经济数据预测的原始数据，
+
+#### 3.2 预测的局限性
+1. 由于IMF披露的预测数据只给了横截面的预测数据（即只有截止当前，历史的预测数据和未来的预测数据），并没有给出**对应年份历史数据被修改时的日期**，因此只能假设IMF每年预测的数据都是维持不变的，会导致后续的预测可信度有所下降。
+
+2.CPI、外汇储备的实际数据只更新到了2025年4月；Trade balance数据仅更新到2024年；GDP、政府债务/GDP数据仅更新到2025年，缺失的数据只能使用预测值进行预测和回归。
+
+
+#### 3.3 
+
+
 ---
 
-#### 3.3 预测的局限性
-由于IMF
 
 ### 四、未来一年外汇预测与可替代性
 
@@ -207,13 +229,23 @@ SLE_research/
 │   ├── final_daily/         # 日度汇率与政策事件数据
 │   ├── final_monthly/       # 初始模型的月度数据
 │   ├── 2_regression_monthly/ # 第二轮回归的月度数据
-│   └── 3_POS_prediction_daily/ # POS 模拟预测的日度数据
-│       └── USDSLE_daily.csv
+│   ├── IMF_predict_data/    # IMF 宏观经济预测源数据
+│   ├── POS_actual_predict_origin/ # 按发布日期对齐的实际与预测数据
+│   └── 3_POS_prediction/    # POS 模型验证的最终日度数据
+│       ├── USDSLE_daily.csv
+│       ├── headline_cpi_log_change_daily.csv
+│       ├── gdp_annual_pct_change_daily.csv
+│       ├── trade_balance_annual_pct_change_daily.csv
+│       ├── fx_reserves_log_change_daily.csv
+│       ├── general_government_gross_debt_annual_change_pp_daily.csv
+│       └── Sierra_Leone_Policy_Event_Dummies_daily.csv
 ├── scripts/
 │   ├── prepare_trade_monthly.py
 │   ├── prepare_money_reserves_monthly.py
 │   ├── prepare_annual_changes_monthly.py
-│   └── prepare_iron_ore_no_long_fill.py
+│   ├── prepare_iron_ore_no_long_fill.py
+│   ├── collect_cpi_release_evidence.py
+│   └── prepare_pos_daily_factors.py
 └── notebook/
     ├── 1_descriptive.ipynb
     ├── 2_adf.ipynb
@@ -221,7 +253,8 @@ SLE_research/
     ├── 4_auto_regression_model.ipynb
     ├── 5_second_data_check.ipynb
     ├── 6_second_regression.ipynb
-    └── 7_POS_mock_prediction.ipynb
+    ├── 7_POS_model_retest.ipynb
+    └── 8_POS_mock_prediction # POS 模拟预测预留文件，暂无扩展名
 ```
 
 #### 5.2 运行方法
@@ -233,6 +266,6 @@ SLE_research/
 uv sync
 ```
 
-主要的模型回归与模型预测的过程均存放在```noteboook/```当中。在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的六个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
+主要的模型回归与模型预测的过程均存放在```notebook/```当中。在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的七个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归，7 对应 POS 初始模型重估及基准比较。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
 
 

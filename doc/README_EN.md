@@ -4,7 +4,7 @@ Sierra Leone Exchange Rate Research
 
 > **Author:** Yi Yang (Kitazaki-Hinata)
 >
-> **Last Update:** 2026-Oct-26
+> **Last Update:** 2026-Oct-27
 
 <p align="center">
     Language: <a href="../README.md">简体中文</a> | English
@@ -14,13 +14,30 @@ Sierra Leone Exchange Rate Research
 
 ### 1. Project Introduction
 
-This project studies the relationship between the Sierra Leone leone exchange rate against the US dollar (USDSLE) and monetary, fiscal, and foreign exchange supply and demand factors. Two rounds of data preparation, factor checks, and AR(1) regression have been completed, along with hypothesis tests and residual diagnostics. The analysis code, charts, and results are saved in six Jupyter notebooks in the `notebook` folder.
+This project studies the relationship between the Sierra Leone leone exchange rate against the US dollar (USDSLE) and monetary, fiscal, and foreign exchange supply and demand factors. Two rounds of data preparation, factor checks, and AR(1) regression have been completed, along with hypothesis tests and residual diagnostics. The analysis code, charts, and results are saved in seven Jupyter notebooks in the `notebook` folder.
 
 ---
 
 ### 2. Models and Testing Methods
 
-#### 2.1 Initial Model (First-Stage Model)
+#### 2.1 Data Directories
+
+The `data` folder contains the following categories:
+
+| Directory/name | Description |
+|---|---|
+| `source` | Raw data downloaded from the source providers |
+| `cleaned` | Data after initial cleaning and timestamp preparation |
+| `final_daily` | Daily data retained as a backup after cleaning, since the subsequent correlation analysis uses monthly periods |
+| `final_monthly` | **Important:** Complete, cleaned data for the first regression, with standardized timestamps and the selected date range applied |
+| `2_regression_monthly` | **Important:** Final data for the second regression |
+| `IMF_predict_data` | Source data for IMF forecasts of Sierra Leone's macroeconomic indicators |
+| `POS_actual_predict_origin` | Actual observations and IMF forecasts after initial preparation and alignment to publication dates or assumed release lags |
+| `3_POS_prediction` | **Important:** Final data for POS model validation. GDP, the trade balance, and government debt/GDP combine IMF forecasts with actual observations; the third column identifies actual values as `0` and forecasts as `1` |
+
+---
+
+#### 2.2 Initial Model (First-Stage Regression)
 
 Monthly data are stored in `data/final_monthly/`, covering January 2012 through June 2026 with 174 month-end dates. The current diagnostics use training data from January 2012 through December 2024.
 
@@ -58,7 +75,7 @@ All log changes are calculated as `100 × [ln X(t) − ln X(t−1)]`. Policy rec
 
 ---
 
-#### 2.2 Factor Testing Workflow
+#### 2.3 Factor Testing Workflow
 
 | Stage | Notebook | Completed work |
 |---|---|---|
@@ -69,7 +86,7 @@ All log changes are calculated as `100 × [ln X(t) − ln X(t−1)]`. Policy rec
 
 ---
 
-#### 2.3 Initial Regression Results
+#### 2.4 Initial Regression Results
 
 After data cleaning and truncation, seasonality checks, unit root tests, and collinearity checks, the p-values for the model's β coefficients are:
 
@@ -87,7 +104,7 @@ See [4_auto_regression_model.ipynb](../notebook/4_auto_regression_model.ipynb) f
 
 ---
 
-#### 2.4 Second Regression
+#### 2.5 Second Regression
 
 The second-round inputs are stored in [data/2_regression_monthly/](../data/2_regression_monthly/). Each file retains 174 month-end dates from January 2012 through June 2026. Numerical series use the date and value columns; the government debt file's `period_classification` column is excluded from the regression.
 
@@ -107,7 +124,7 @@ Missing values remain blank: CPI is missing in the first month and has valid cha
 
 ---
 
-#### 2.5 Final Model
+#### 2.6 Final Model
 
 The final model is implemented in [6_second_regression.ipynb](../notebook/6_second_regression.ipynb). The exchange rate lag is constructed on the full monthly calendar before selecting observations with no missing values across the model variables. The estimation sample covers February 2012 through December 2024, comprising 155 months.
 
@@ -166,7 +183,18 @@ The original event table has six columns. The two August 2021 event columns are 
 
 #### 3.1 POS Simulation Rules
 
-#### 3.2 File Locations
+Data from January 1, 2025 through June 30, 2026 are used for POS regression simulations to assess the model's predictive properties.
+
+When an official publication date is available for a macroeconomic observation, the data are assigned to that date. Otherwise, the observation is assigned to the middle of the following month or year. For example, June data are assigned to July 15, and annual data for 2024 are assigned to June 18, 2025.
+
+The regression will also use two approaches: accounting for publication delays and combining forecast and actual values. Accounting for publication delays means that data enter the model on their publication date. For example, 2024 data are updated only after their official release; before then, the model can use only information available at that time. Combining forecast and actual values means constructing a daily adopted value for an indicator with both IMF forecasts and actual observations. Before the actual value is released, the latest forecast available at the time is used. After release, the actual value is used, and a flag records whether the adopted value is a forecast or an actual observation.
+
+#### 3.2 Forecast Limitations
+
+1. The IMF forecast data provide only a current snapshot of historical and future forecasts, without **the dates on which the historical values for each year were revised**. Each year's IMF forecasts must therefore be assumed to remain unchanged, which reduces the reliability of subsequent forecasts.
+2. Actual CPI and foreign exchange reserves data extend only through April 2025; trade balance data extend only through 2024; GDP and government debt/GDP data extend only through 2025. Missing data can only be replaced with forecasts for prediction and regression.
+
+#### 3.3
 
 ---
 
@@ -197,18 +225,28 @@ SLE_research/
 │       └── fig1_first_regression.png # Initial regression results figure
 ├── data/
 │   ├── metadata.xlsx
-│   ├── source/               # Raw data
-│   ├── cleaned/              # Prepared intermediate data
-│   ├── final_daily/          # Daily exchange rate and policy event data
-│   ├── final_monthly/        # Monthly data for the initial model
+│   ├── source/              # Raw data
+│   ├── cleaned/             # Prepared intermediate data
+│   ├── final_daily/         # Daily exchange rate and policy event data
+│   ├── final_monthly/       # Monthly data for the initial model
 │   ├── 2_regression_monthly/ # Monthly data for the second regression
-│   └── 3_POS_prediction_daily/ # Daily data for POS forecast simulations
-│       └── USDSLE_daily.csv
+│   ├── IMF_predict_data/    # Source data for IMF macroeconomic forecasts
+│   ├── POS_actual_predict_origin/ # Actual and forecast data aligned to publication dates
+│   └── 3_POS_prediction/    # Final daily data for POS model validation
+│       ├── USDSLE_daily.csv
+│       ├── headline_cpi_log_change_daily.csv
+│       ├── gdp_annual_pct_change_daily.csv
+│       ├── trade_balance_annual_pct_change_daily.csv
+│       ├── fx_reserves_log_change_daily.csv
+│       ├── general_government_gross_debt_annual_change_pp_daily.csv
+│       └── Sierra_Leone_Policy_Event_Dummies_daily.csv
 ├── scripts/
 │   ├── prepare_trade_monthly.py
 │   ├── prepare_money_reserves_monthly.py
 │   ├── prepare_annual_changes_monthly.py
-│   └── prepare_iron_ore_no_long_fill.py
+│   ├── prepare_iron_ore_no_long_fill.py
+│   ├── collect_cpi_release_evidence.py
+│   └── prepare_pos_daily_factors.py
 └── notebook/
     ├── 1_descriptive.ipynb
     ├── 2_adf.ipynb
@@ -216,7 +254,8 @@ SLE_research/
     ├── 4_auto_regression_model.ipynb
     ├── 5_second_data_check.ipynb
     ├── 6_second_regression.ipynb
-    └── 7_POS_mock_prediction.ipynb
+    ├── 7_POS_model_retest.ipynb
+    └── 8_POS_mock_prediction # Placeholder for POS forecast simulations, currently without a file extension
 ```
 
 #### 5.2 Running the Project
@@ -228,4 +267,4 @@ The project uses Python 3.13 and uv for its data processing scripts. Install dep
 uv sync
 ```
 
-In an editor with Jupyter support, select the Python kernel from the project's `.venv` and run the six notebooks under `notebook/` in numerical order. Notebooks 1–4 cover the initial model, while 5–6 cover the second data check and regression. The notebooks can read data from either the project root or the `notebook/` directory. Tables and charts are saved within the notebooks.
+The main regression and forecasting work is stored in `notebook/`. In an editor with Jupyter support, select the Python kernel from the project's `.venv` and run the seven notebooks under `notebook/` in numerical order. Notebooks 1–4 cover the initial model, 5–6 cover the second data check and regression, and 7 covers re-estimation of the initial POS model and comparison with a benchmark. The notebooks can read data from either the project root or the `notebook/` directory. Tables and charts are saved within the notebooks.
