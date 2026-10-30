@@ -194,7 +194,7 @@ The regression will also use two approaches: accounting for publication delays a
 1. The IMF forecast data provide only a current snapshot of historical and future forecasts, without **the dates on which the historical values for each year were revised**. Each year's IMF forecasts must therefore be assumed to remain unchanged, which reduces the reliability of subsequent forecasts.
 2. Actual CPI and foreign exchange reserves data extend only through April 2025; trade balance data extend only through 2024; GDP and government debt/GDP data extend only through 2025. Missing data can only be replaced with forecasts for prediction and regression.
 
-#### 3.3
+
 
 ---
 
