@@ -189,12 +189,26 @@ When an official publication date is available for a macroeconomic observation, 
 
 The regression will also use two approaches: accounting for publication delays and combining forecast and actual values. Accounting for publication delays means that data enter the model on their publication date. For example, 2024 data are updated only after their official release; before then, the model can use only information available at that time. Combining forecast and actual values means constructing a daily adopted value for an indicator with both IMF forecasts and actual observations. Before the actual value is released, the latest forecast available at the time is used. After release, the actual value is used, and a flag records whether the adopted value is a forecast or an actual observation.
 
+---
+
 #### 3.2 Forecast Limitations
 
 1. The IMF forecast data provide only a current snapshot of historical and future forecasts, without **the dates on which the historical values for each year were revised**. Each year's IMF forecasts must therefore be assumed to remain unchanged, which reduces the reliability of subsequent forecasts.
 2. Actual CPI and foreign exchange reserves data extend only through April 2025; trade balance data extend only through 2024; GDP and government debt/GDP data extend only through 2025. Missing data can only be replaced with forecasts for prediction and regression.
 
+---
 
+#### 3.3 Results of the First POS Forecast
+
+<p align="center">
+  <img src="figure/fig2_POS_pre.png" alt="POS regression result">
+</p>
+
+Re-estimating the regression with lagged actual data and IMF forecasts, followed by POS forecasts of subsequent exchange rate changes, shows a decline in the model's explanatory power. The five lagged macro factors have very little explanatory power for exchange rate changes.
+
+The author hypothesizes that the substantial decline in the macro factors' predictive and explanatory power reflects the low frequency and delayed publication of indicators such as CPI and GDP. For example, September CPI may not be published until October. In highly efficient foreign exchange markets, prices already reflect expectations about macroeconomic data before their release. Using these delayed releases to explain exchange rate movements that already incorporate the information therefore provides almost no incremental information for predicting the next day's (one-step-ahead) exchange rate change. However, it remains uncertain whether expectations about macro factors are efficiently reflected in less liquid international currency markets such as that for SLE.
+
+The next step is to incorporate known upcoming events as dummy variables in the regression and attempt to produce more refined forecasts.
 
 ---
 
