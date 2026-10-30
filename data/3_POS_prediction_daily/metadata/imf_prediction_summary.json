@@ -1,0 +1,133 @@
+{
+  "mode": "synthetic_annual_release_calendar_not_real_time_forecast_vintages",
+  "calendar_rows": 5295,
+  "start": "2012/1/1",
+  "end": "2026/6/30",
+  "monthly_actual_switch": "next_release",
+  "reserves_scenario": "with_rsf",
+  "forecast_scope": "All supplied annual rows, including actual/preliminary rows, are simulated forecast inputs.",
+  "missing_policy": "No interpolation or fallback across missing years. A missing new prediction does not mask an active actual; if the previous forecast is still active, it expires and stays blank until an eligible actual or a new forecast arrives.",
+  "intraday_convention": "Date-level: a release takes effect on that calendar day; eligible actual wins same-day ties.",
+  "frequency_note": "CPI and reserves forecast differences are annual; existing actual differences remain monthly.",
+  "vintage_note": "User-assigned dates can precede real source publications. These outputs are not leakage-free historical forecasts.",
+  "actual_calendar": "data\\3_POS_prediction_daily\\metadata\\publication_calendar.csv",
+  "excluded_actual_projections": [
+    {
+      "factor": "general_government_gross_debt_annual_change_pp_monthly",
+      "source_period": "2026",
+      "value": "-0.9",
+      "available_date": "2026-04-14",
+      "period_classification": "Projection (2026+)"
+    }
+  ],
+  "factors": [
+    {
+      "factor": "headline_cpi_log_change_monthly",
+      "actual_file": "headline_cpi_log_change_daily.csv",
+      "prediction_file": "PREDICT_IMF_headline_cpi_log_change_daily.csv",
+      "source_column": "cpi_annual_average_index_dec2021_100",
+      "difference_method": "log",
+      "annual_update_month_day": "10-13",
+      "actual_nonmissing_days": 4868,
+      "prediction_nonmissing_days": 348,
+      "both_missing_days": 79,
+      "overlap_days": 0,
+      "missing_prediction_years": {
+        "2012": "missing_previous_year"
+      }
+    },
+    {
+      "factor": "gdp_annual_pct_change_monthly",
+      "actual_file": "gdp_annual_pct_change_daily.csv",
+      "prediction_file": "PREDICT_IMF_gdp_annual_pct_change_daily.csv",
+      "source_column": "real_gdp_growth_pct",
+      "difference_method": "percent_abs_base",
+      "annual_update_month_day": "10-13",
+      "actual_nonmissing_days": 1534,
+      "prediction_nonmissing_days": 3227,
+      "both_missing_days": 534,
+      "overlap_days": 0,
+      "missing_prediction_years": {
+        "2012": "missing_previous_year"
+      }
+    },
+    {
+      "factor": "general_government_gross_debt_annual_change_pp_monthly",
+      "actual_file": "general_government_gross_debt_annual_change_pp_daily.csv",
+      "prediction_file": "PREDICT_IMF_general_government_gross_debt_annual_change_pp_daily.csv",
+      "source_column": "general_government_gross_debt_pct_gdp",
+      "difference_method": "difference",
+      "annual_update_month_day": "10-13",
+      "actual_nonmissing_days": 1599,
+      "prediction_nonmissing_days": 3162,
+      "both_missing_days": 534,
+      "overlap_days": 0,
+      "missing_prediction_years": {
+        "2012": "missing_previous_year"
+      }
+    },
+    {
+      "factor": "trade_balance_annual_pct_change_monthly",
+      "actual_file": "trade_balance_annual_pct_change_daily.csv",
+      "prediction_file": "PREDICT_IMF_trade_balance_annual_pct_change_daily.csv",
+      "source_column": "goods_trade_balance_usd_million",
+      "difference_method": "percent_abs_base",
+      "annual_update_month_day": "07-07",
+      "actual_nonmissing_days": 4402,
+      "prediction_nonmissing_days": 359,
+      "both_missing_days": 534,
+      "overlap_days": 0,
+      "missing_prediction_years": {
+        "2012": "missing_target_year",
+        "2013": "missing_target_year",
+        "2014": "missing_target_year",
+        "2015": "missing_target_year",
+        "2016": "missing_target_year",
+        "2017": "missing_target_year",
+        "2018": "missing_target_year",
+        "2019": "missing_target_year",
+        "2020": "missing_target_year",
+        "2021": "missing_target_year",
+        "2022": "missing_target_year",
+        "2023": "missing_target_year",
+        "2024": "missing_previous_year"
+      }
+    },
+    {
+      "factor": "fx_reserves_log_change_monthly",
+      "actual_file": "fx_reserves_log_change_daily.csv",
+      "prediction_file": "PREDICT_IMF_fx_reserves_log_change_daily.csv",
+      "source_column": "gross_reserves_excl_swaps_with_rsf_usd_million",
+      "difference_method": "log",
+      "annual_update_month_day": "05-29",
+      "actual_nonmissing_days": 4852,
+      "prediction_nonmissing_days": 398,
+      "both_missing_days": 45,
+      "overlap_days": 0,
+      "missing_prediction_years": {
+        "2012": "missing_target_year",
+        "2013": "missing_target_year",
+        "2014": "missing_target_year",
+        "2015": "missing_target_year",
+        "2016": "missing_target_year",
+        "2017": "missing_target_year",
+        "2018": "missing_target_year",
+        "2019": "missing_target_year",
+        "2020": "missing_target_year",
+        "2021": "missing_target_year",
+        "2022": "missing_target_year",
+        "2023": "missing_target_year",
+        "2024": "missing_previous_year"
+      }
+    }
+  ],
+  "input_sha256": {
+    "data\\3_POS_prediction_daily\\USDSLE_daily.csv": "045fb6b3dfb00797b47bdb51b62f9cd92cac3f83140fa50e18b2fc4915caaf69",
+    "data\\3_POS_prediction_daily\\metadata\\publication_calendar.csv": "d12284a654da41cc818739aa13d34cc6c37e3cb2f5192e3af19875faf8a4dc1d",
+    "data\\IMF_predict_data\\01_CPI_IMF_WEO_Oct2026.csv": "a8531139849b5cc7710d631abc83769cf45d2917b7eb5157bdbaa672f3f2e0fb",
+    "data\\IMF_predict_data\\02_GDP_Growth_IMF_WEO_Oct2026.csv": "096a6d66f6a311c33bc3cd98b9cd401c69e623da8279a12b9a680f5a42826c21",
+    "data\\IMF_predict_data\\03_Government_Debt_GDP_IMF_WEO_Oct2026.csv": "02e159419bf93834ba4c425aaee227712b860f52bb39a57ae6eae38da11e6026",
+    "data\\IMF_predict_data\\04_Trade_Balance_IMF_CR_26_168.csv": "cf2703e23f8ea5cfd271eac9b7374dc4d239b7fd85756367f074d917b0024ebd",
+    "data\\IMF_predict_data\\05_FX_Reserves_IMF_CR_26_168.csv": "1c3f1c641a9d73afc23a117ac981df49ed85ac55ea8c3fde299091661d13f4e9"
+  }
+}
