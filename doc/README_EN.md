@@ -198,7 +198,7 @@ The regression will also use two approaches: accounting for publication delays a
 
 ---
 
-#### 3.3 Results of the First POS Forecast
+#### 3.3 POS Forecast Results
 
 <p align="center">
   <img src="figure/fig2_POS_pre.png" alt="POS regression result">
@@ -208,15 +208,102 @@ Re-estimating the regression with lagged actual data and IMF forecasts, followed
 
 The author hypothesizes that the substantial decline in the macro factors' predictive and explanatory power reflects the low frequency and delayed publication of indicators such as CPI and GDP. For example, September CPI may not be published until October. In highly efficient foreign exchange markets, prices already reflect expectations about macroeconomic data before their release. Using these delayed releases to explain exchange rate movements that already incorporate the information therefore provides almost no incremental information for predicting the next day's (one-step-ahead) exchange rate change. However, it remains uncertain whether expectations about macro factors are efficiently reflected in less liquid international currency markets such as that for SLE.
 
-The next step is to incorporate known upcoming events as dummy variables in the regression and attempt to produce more refined forecasts.
-
 ---
 
 ### 4. Exchange Rate Forecasts for the Coming Year and Substitutability
 
 #### 4.1 Forecasting Method
 
+In ```9_stochastic_fx_backtest```, Monte Carlo simulations of exchange rate paths are performed under three different conditions, and the means and CI ranges are calculated. The model's factor parameters are taken from ```6_second_regression```. The three macroeconomic conditions are as follows:
+
+Three specified stress assumptions are used: 5%, 20%, and 50% represent low, high, and very high annualized inflation, respectively. “Normal” is the name of the middle scenario. A common reference GDP growth rate of 4% is used to calculate changes in the growth rate.
+
+| Assumption for the coming year | Better than expected | Normal high inflation | Adverse case |
+|---|---:|---:|---:|
+| Annualized CPI increase | 5% | 20% | 50% |
+| Annual real GDP growth, with a reference rate of 4% | 6% | 4% | 1% |
+| Change in the size of the trade deficit | Narrow by 20% | Unchanged | Widen by 30% |
+| Increase in foreign exchange reserves | 20% | 0% | -25% |
+| Annual change in government debt/GDP | -3 percentage points | 0 | +8 percentage points |
+
+The forecast values are converted to monthly data as follows:
+
+- CPI and reserves: `100 * log1p(annual_increase / 100) / 12`, giving the monthly log change.
+- GDP: `100 * (scenario_growth - reference_growth) / abs(reference_growth)`.
+- Trade: `100 * (scenario_balance - reference_balance) / abs(reference_balance)`. A deficit index of -100 is used as the common base, so a narrowing deficit produces a positive input. The positive estimated trade coefficient from the original model is retained.
+- Debt: the annual percentage-point change in the debt ratio is entered directly into each month, consistent with the original regression.
+
+---
+
 #### 4.2 Forecast Results
+
+The forecast results are in notebook 9: [9_stochastic_fx_backtest.ipynb](../notebook/9_stochastic_fx_backtest.ipynb).
+
+---
+
+#### 4.3 Model Transferability Analysis
+
+<u>4.3.1 Applicable Economies</u>
+
+For developing economies whose export revenues are concentrated in a small number of agricultural or mineral products and which also depend on imports of fuel, food, and capital goods, changes in the trade balance can provide a starting point for analyzing exchange rate pressure. Lower export revenues or higher import spending increase depreciation pressure on the domestic currency, other things being equal. External financing, remittance inflows, and central bank foreign exchange intervention may ease this pressure.
+
+Under the IMF BPM6 sign convention for the financial account, the balance of payments identity can be written as:
+
+
+    CA+KA-FA+EO=0
+
+
+Here, CA is the current account balance, KA is the capital account balance, FA is foreign exchange reserves, and EO is net errors (that is, ε). In emerging markets, the factors driving changes in the domestic currency's exchange rate usually arise mainly from trade, or changes in CA.
+
+The relationship between inflation and exchange rates can be studied through 1. purchasing power; 2. import costs; 3. market expectations, and other factors. Domestic currency depreciation raises the cost of imports priced in foreign currencies and may then pass through to domestic prices. The extent of this pass-through varies with the composition of imports, pricing practices, and the inflation environment.
+
+Related studies find that exchange rate pass-through to prices is usually stronger during periods of high inflation. This suggests that the relationship between CPI and exchange rates may differ substantially across countries and periods. The CPI–exchange rate association found in this project's Sierra Leone sample can be used to construct macroeconomic scenarios for that country, while the corresponding coefficients and forecast performance for other countries need to be determined using local data.
+
+<br>
+<u>4.3.2 Model Specification</u>
+
+The project's transferability has two components: the basic stochastic model (the control model) and the macroeconomic scenario model (the actual model).
+
+The basic stochastic model estimates the mean and volatility of historical exchange rate log returns and generates future paths through Monte Carlo simulation. This process depends only on the target currency's historical exchange rates and can be applied to economies with different industrial structures. Let $S_{t,c}$ denote the number of domestic currency units per US dollar in country $c$. Then:
+
+$$
+r^{(j)}_{k}
+=\ln\left(\frac{S^{(j)}_{k}}{S^{(j)}_{k-1}}\right)
+=m^{(j)}+\hat{\sigma} z_k,
+\qquad
+z_k\sim N(0,1),
+$$
+
+$$
+m^{(j)}=
+\begin{cases}
+\hat{\mu}, & j=\mathrm{hist},\\
+0, & j=\mathrm{zero}.
+\end{cases}
+$$
+
+When applying the model to another currency, $\hat{\mu}_c$ and $\hat{\sigma}_c$ are re-estimated using that currency's data, and the actual exchange rate at the forecast origin is used as the initial value. The same procedures can be used to generate paths, calculate quantiles, and display the terminal distribution. A constant mean, constant volatility, and independent normal shocks remain assumptions of this basic model. Their suitability is assessed using the target currency's historical behavior and out-of-sample tests.
+
+**Transferring the macroeconomic scenario model involves more country-specific information**. The existing model uses CPI, changes in GDP growth, changes in the trade balance, foreign exchange reserves, and government debt/GDP to convert specified macroeconomic assumptions into conditional exchange rate paths. For other countries, these variables can serve as an initial candidate set, with adjustments based on sources of foreign exchange income and policy arrangements. For example, commodity-exporting economies can examine major export commodity prices and export revenues, economies that depend heavily on remittances can examine remittance flows, and economies with active cross-border portfolio investment can examine capital flows and interest rate differentials. Whether a variable is retained depends on its economic meaning, data availability, and out-of-sample performance.
+
+The adjustments required for different currencies are as follows:
+
+| Model component | Recalibration or adjustment required |
+|---|---|
+| Exchange rate input and initial value | Use the target currency's historical quotes and exchange rate at the forecast origin, expressed consistently as domestic currency units per US dollar |
+| Basic stochastic parameters | Re-estimate the mean and standard deviation of log returns using the target currency's calibration sample |
+| Time and trading calendar | Specify local trading days, holidays, quote time zones, and rules for days without updates so that estimation and simulation use a consistent time convention |
+| Macroeconomic variables | Select factors for the target economy and standardize variable definitions, units, and original frequencies |
+| Regression parameters and event terms | Re-estimate the intercept, AR coefficient, macro factor coefficients, and controls for local historical events |
+| Random errors | Calibrate volatility using the re-estimated residuals and check skewness, heavy tails, and time dependence |
+| Future scenarios | Specify assumptions about inflation, growth, trade, reserves, and debt changes based on local economic conditions |
+
+<br>
+<u>4.3.3 Testing Methods & Other Considerations</u>
+
+The transferred model is evaluated through Pseudo Out of Sample (POS) testing using independent 12-month forecast windows. Mean or median forecasts are compared with simple benchmarks using RMSE and MAE, while stochastic paths are evaluated using prediction interval coverage and width. These tests are needed to determine whether the same modeling process has practical value for the target currency. The project's current empirical results cover Sierra Leone; forecast performance for other currencies still requires recalibration and validation.
+
+The model's applicability depends mainly on the exchange rate regime and parameter stability. For currencies with some scope for exchange rate fluctuations, historical returns can provide a basis for calibrating everyday volatility. For currencies with a long-standing peg to the US dollar, historical samples may show low volatility. Using that volatility alone makes it difficult to describe the risk of a future parity adjustment, so separate scenarios for parity adjustment or depegging are needed. For economies pegged to other currencies, the domestic currency's path against the US dollar is also affected by changes in the anchor currency's exchange rate against the dollar. Countries that have undergone major policy changes need to select a new calibration window using data from the new regime.
 
 ---
 
@@ -236,7 +323,8 @@ SLE_research/
 ├── doc/
 │   ├── README_EN.md
 │   └── figure/
-│       └── fig1_first_regression.png # Initial regression results figure
+│       ├── fig1_first_regression.png # Initial regression results figure
+│       └── fig2_POS_pre.png          # POS regression results figure
 ├── data/
 │   ├── metadata.xlsx
 │   ├── source/              # Raw data
@@ -269,7 +357,8 @@ SLE_research/
     ├── 5_second_data_check.ipynb
     ├── 6_second_regression.ipynb
     ├── 7_POS_model_retest.ipynb
-    └── 8_POS_mock_prediction # Placeholder for POS forecast simulations, currently without a file extension
+    ├── 8_POS_mock_prediction.ipynb  # Daily one-step POS forecasts
+    └── 9_stochastic_fx_backtest.ipynb # Stochastic paths, macro scenarios, and a one-year backtest
 ```
 
 #### 5.2 Running the Project
@@ -281,4 +370,4 @@ The project uses Python 3.13 and uv for its data processing scripts. Install dep
 uv sync
 ```
 
-The main regression and forecasting work is stored in `notebook/`. In an editor with Jupyter support, select the Python kernel from the project's `.venv` and run the seven notebooks under `notebook/` in numerical order. Notebooks 1–4 cover the initial model, 5–6 cover the second data check and regression, and 7 covers re-estimation of the initial POS model and comparison with a benchmark. The notebooks can read data from either the project root or the `notebook/` directory. Tables and charts are saved within the notebooks.
+The main regression and forecasting work is stored in `notebook/`. In an editor with Jupyter support, select the Python kernel from the project's `.venv` and run the nine notebooks under `notebook/` in numerical order. Notebooks 1–4 cover the initial model, 5–6 cover the second data check and regression, 7 covers re-estimation of the initial POS model and comparison with a benchmark, 8 covers daily one-step POS forecasts, and 9 covers stochastic path simulation, macro scenario analysis, and a fixed-origin one-year backtest. The notebooks can read data from either the project root or the `notebook/` directory. Tables and charts are saved within the notebooks.

@@ -316,7 +316,8 @@ SLE_research/
 ├── doc/
 │   ├── README_EN.md
 │   └── figure/
-│       └── fig1_first_regression.png # 初始回归结果图
+│       ├── fig1_first_regression.png # 初始回归结果图
+│       └── fig2_POS_pre.png          # POS 回归结果图
 ├── data/
 │   ├── metadata.xlsx
 │   ├── source/              # 原始数据
@@ -349,7 +350,8 @@ SLE_research/
     ├── 5_second_data_check.ipynb
     ├── 6_second_regression.ipynb
     ├── 7_POS_model_retest.ipynb
-    └── 8_POS_mock_prediction # POS 模拟预测预留文件，暂无扩展名
+    ├── 8_POS_mock_prediction.ipynb  # 日度 POS 一步预测
+    └── 9_stochastic_fx_backtest.ipynb # 随机路径、宏观情景和一年期回测
 ```
 
 #### 5.2 运行方法
@@ -361,6 +363,6 @@ SLE_research/
 uv sync
 ```
 
-主要的模型回归与模型预测的过程均存放在```notebook/```当中。在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的七个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归，7 对应 POS 初始模型重估及基准比较。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
+主要的模型回归与模型预测的过程均存放在```notebook/```当中。在支持 Jupyter 的编辑器中选择项目 `.venv` 的 Python 内核，按编号运行 `notebook/` 下的九个笔记本。1–4 对应初始模型，5–6 对应第二轮数据检查和回归，7 对应 POS 初始模型重估及基准比较，8 对应日度 POS 一步预测，9 对应随机路径模拟、宏观情景分析和固定起点的一年期回测。笔记本支持从项目根目录或 `notebook/` 目录读取数据，表格和图形保存在笔记本内。
 
 
