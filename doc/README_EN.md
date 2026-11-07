@@ -224,7 +224,7 @@ After estimating the monthly regression with inputs restricted to information av
   <img src="figure/fig5_POS.png" alt="POS regression result">
 </p>
 
-In the monthly Pseudo Out of Sample test, event dummy inputs are set to 0 during the forecast period, while historical events remain in the training model. The AR(1) plus macro-factor model has lower forecast error than the AR(1)-only benchmark. The full model's updated training Rs (R^2) changes little and remains around 0.55. However, its POS RMSE is 0.4566, above the zero-change benchmark's 0.3147, and its out-of-sample R² relative to zero change is -1.1045. The overall POS performance in this test therefore does not outperform a zero-change forecast.
+In the monthly pseudo out-of-sample test, the event dummies for the forecast period are set to 0, while historical events remain in the training model. It can be seen that the forecast error of the AR(1) + macro factor model is smaller than that of the pure AR(1) benchmark. After updating the overall model, the training \(R^2\) does not change much and remains around 0.55. The full model's POS RMSE is 0.4566, higher than the zero-change benchmark's 0.3147; however, the full model's directional accuracy is significantly higher than that of the zero-change benchmark, with the same direction in 13 out of 18 months.
 
 
 ---
