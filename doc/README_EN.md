@@ -4,7 +4,7 @@ Sierra Leone Exchange Rate Research
 
 > **Author:** Yi Yang (Kitazaki-Hinata)
 >
-> **Last Update:** 2026-Oct-27
+> **Last Update:** 2026-Nov-07
 
 <p align="center">
     Language: <a href="../README.md">简体中文</a> | English
